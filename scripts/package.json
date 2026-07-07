@@ -1,0 +1,15 @@
+{
+  "name": "agentbazaar-scripts",
+  "version": "1.0.0",
+  "scripts": {
+    "prove-chain": "ts-node prove_chain.ts"
+  },
+  "dependencies": {
+    "@lucid-evolution/lucid": "^0.3.8",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.0",
+    "typescript": "^5"
+  }
+}

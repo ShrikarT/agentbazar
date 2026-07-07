@@ -1,0 +1,9 @@
+from abc import ABC, abstractmethod
+
+class PaymentProvider(ABC):
+    @abstractmethod
+    async def start_job(self, task_id: str, input_data: dict) -> dict: ...
+    @abstractmethod
+    async def job_status(self, job_id: str) -> dict: ...
+    @abstractmethod
+    def get_agent_info(self, agent_type: str) -> dict: ...
