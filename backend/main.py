@@ -16,6 +16,10 @@ app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(mip003_router, prefix="", tags=["MIP-003"])
 app.include_router(midnight_router, prefix="/api/midnight", tags=["midnight"])
 
+@app.get("/")
+async def root():
+    return {"message": "ProofWork API is running. Frontend should be routed via vercel.json or hosted separately."}
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "project": "ProofWork", "network": "Cardano Preprod",
