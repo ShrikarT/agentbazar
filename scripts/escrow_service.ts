@@ -263,9 +263,12 @@ async function handleRefund(body: {
 async function handleStatus(txHash: string): Promise<object> {
   if (!txHash) return { success: false, error: "Missing txHash" };
   try {
-    const scriptUtxos = await lucid.utxosAt(scriptAddress);
-    const utxo = scriptUtxos.find((u) => u.txHash === txHash);
-    if (utxo) {
+    const projectId = process.env.BLOCKFROST_PROJECT_ID_PREPROD || "";
+    // Query blockfrost directly. It returns 404 if tx is in mempool, 200 if confirmed in a block.
+    const res = await fetch(`https://cardano-preprod.blockfrost.io/api/v0/txs/${txHash}`, {
+      headers: { project_id: projectId }
+    });
+    if (res.status === 200) {
       return { success: true, confirmed: true };
     }
     return { success: true, confirmed: false };

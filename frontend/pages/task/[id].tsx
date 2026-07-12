@@ -93,7 +93,12 @@ export default function TaskDetail() {
     try {
       const updated = await tasksApi.complete(id as string);
       setTask(updated);
-    } finally { setLoading(false); }
+    } catch (e: any) {
+      console.error(e);
+      alert(e.response?.data?.detail || e.message || "Failed to release ADA");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function refund() {
@@ -103,8 +108,11 @@ export default function TaskDetail() {
       const updated = await tasksApi.refund(id as string);
       setTask(updated);
     } catch (e: any) {
-      alert(e?.response?.data?.detail || "Refund failed");
-    } finally { setRefunding(false); }
+      console.error(e);
+      alert(e.response?.data?.detail || e.message || "Failed to refund ADA");
+    } finally {
+      setRefunding(false);
+    }
   }
 
   if (!task) return (
