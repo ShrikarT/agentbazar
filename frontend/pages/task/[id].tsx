@@ -32,6 +32,8 @@ export default function TaskDetail() {
   const [execStep, setExecStep] = useState(0);
   const [isLockConfirmed, setIsLockConfirmed] = useState(false);
   const [refunding, setRefunding] = useState(false);
+  const [zkProof, setZkProof] = useState<any>(null);
+  const [showZkProof, setShowZkProof] = useState(false);
 
   useEffect(() => {
     if (!task?.escrow_tx_hash || task.status === 'paid' || task.status === 'refunded' || isLockConfirmed) return;
@@ -60,7 +62,8 @@ export default function TaskDetail() {
     setTimeout(async () => {
       setExecStep(2); // 🔐 ZK Proof
       try {
-        await tasksApi.proveZk(bids[0]?.agent_id || "agent");
+        const proofRes = await tasksApi.proveZk(bids[0]?.agent_id || "agent");
+        setZkProof(proofRes.proof_json);
       } catch (e) {
         console.error(e);
       }
@@ -175,6 +178,18 @@ export default function TaskDetail() {
                     </div>
                     <div className={`text-sm ${execStep === s.step ? 'text-white font-medium' : 'text-gray-400'}`}>
                       {s.label}
+                      {s.step === 2 && execStep >= 2 && zkProof && (
+                        <div className="mt-2">
+                          <button onClick={() => setShowZkProof(!showZkProof)} className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                            {showZkProof ? '▼ Hide' : '▶ View'} proof.json
+                          </button>
+                          {showZkProof && (
+                            <pre className="mt-2 text-[10px] text-gray-400 bg-black/40 p-3 rounded-lg overflow-x-auto border border-white/5 font-mono shadow-inner max-w-lg">
+                              {JSON.stringify(zkProof, null, 2)}
+                            </pre>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
