@@ -10,7 +10,9 @@ dependencies = [
     "httpx==0.25.2",
     "pydantic==2.5.3",
     "python-dotenv==1.0.0",
-    "anyio==3.7.1"
+    "anyio==3.7.1",
+    "tavily-python==0.5.0",
+    "pandas==2.2.0"
 ]
 
 [tool.vercel]
