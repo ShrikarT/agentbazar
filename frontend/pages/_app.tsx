@@ -1,14 +1,20 @@
 import type { AppProps } from "next/app";
-import { Inter } from "next/font/google";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { tasksApi } from "../services/api";
 import "../styles/globals.css";
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-space",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
@@ -33,91 +39,68 @@ export default function App({ Component, pageProps }: AppProps) {
   }, []);
 
   const navLinks = [
-    { href: "/", label: "Tasks", icon: "📋" },
-    { href: "/post", label: "Post Task", icon: "✨" },
+    { href: "/market", label: "AGENTS" },
+    { href: "/market", label: "TASKS" },
+    { href: "/", label: "CONTRACTS" },
   ];
 
   return (
-    <div className={`${inter.variable} font-sans min-h-screen relative`}>
-      {/* Ambient orbs */}
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-      <div className="orb orb-3" />
+    <div className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen relative font-mono text-gray-300`}>
+      
+      {/* Ambient Thermal Glows */}
+      <div className="thermal-blob thermal-1" />
+      <div className="thermal-blob thermal-2" />
+      <div className="thermal-blob thermal-3" />
+      <div className="animate-scanline" />
 
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 glass-strong animate-slideDown">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold text-sm group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-all duration-300">
-                PW
-              </div>
-              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-[#050510] animate-status-pulse" />
+      <nav className="sticky top-0 z-50 border-b border-[#1F1F28] bg-[#050508]/90 backdrop-blur-md animate-slideUpMono">
+        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+          
+          {/* Left: Logo */}
+          <Link href="/" className="flex items-center gap-4 group">
+            <div className="w-8 h-8 border border-white bg-white text-[#050508] flex items-center justify-center font-bold text-xs group-hover:bg-[#050508] group-hover:text-white transition-colors">
+              PW
             </div>
-            <div>
-              <span className="font-bold text-white text-lg tracking-tight">
-                Proof<span className="text-gradient-primary">Work</span>
-              </span>
-              <span className="hidden sm:block text-[10px] text-gray-500 -mt-0.5 tracking-wide">
-                Provable AI Labor on Cardano
-              </span>
-            </div>
+            <span className="font-bold text-white text-sm tracking-wider uppercase">
+              ProofWork
+            </span>
           </Link>
 
           {/* Center Nav */}
-          <div className="hidden sm:flex items-center gap-1 bg-white/5 rounded-xl p-1">
-            {navLinks.map((link) => (
+          <div className="hidden md:flex items-center gap-10">
+            {navLinks.map((link, i) => (
               <Link
-                key={link.href}
+                key={i}
                 href={link.href}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  router.pathname === link.href
-                    ? "bg-indigo-500/20 text-indigo-300 shadow-sm"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                className={`text-[11px] font-bold tracking-[0.2em] transition-colors ${
+                  router.pathname === link.href ? "text-[#A855F7]" : "text-gray-400 hover:text-white"
                 }`}
               >
-                <span className="mr-1.5">{link.icon}</span>
                 {link.label}
               </Link>
             ))}
           </div>
 
           {/* Right: Network badge & Balance */}
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1">
-              <span className="text-indigo-300 text-xs font-medium font-mono flex items-center gap-1.5">
-                <span>🏦</span> Treasury: ₳ {balanceAda}
-              </span>
+          <div className="flex items-center gap-6">
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-gray-500 text-[10px] uppercase tracking-widest">Treasury</span>
+              <span className="text-white text-sm font-bold">₳ {balanceAda}</span>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
-              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-status-pulse" />
-              <span className="text-emerald-300 text-xs font-medium">Preprod</span>
-            </div>
+            
+            <Link href="/market" className="btn-terminal-primary">
+              LAUNCH APP →
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* Page content */}
-      <main className="relative z-10">
+      <main className="relative z-10 min-h-[calc(100vh-64px)]">
         <Component {...pageProps} />
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 mt-20">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-gray-500 text-xs">
-            © 2026 ProofWork · Built for IndiaCodex'26
-          </p>
-          <div className="flex items-center gap-4 text-xs text-gray-600">
-            <span>Aiken Smart Contracts</span>
-            <span className="text-gray-700">·</span>
-            <span>Masumi Protocol</span>
-            <span className="text-gray-700">·</span>
-            <span>Midnight ZK</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

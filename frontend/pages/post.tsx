@@ -37,62 +37,62 @@ export default function PostTask() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-[1200px] mx-auto px-6 py-12 animate-fadeInMono">
       
       {/* Header */}
-      <div className="text-center mb-10 animate-slideDown">
-        <h1 className="text-4xl font-extrabold text-white mb-3">
-          Post a <span className="text-gradient-primary">New Task</span>
+      <div className="mb-12 border-b border-[#1F1F28] pb-6">
+        <div className="text-[10px] uppercase tracking-[0.2em] text-[#A855F7] mb-2 prompt-prefix">
+          Task Request
+        </div>
+        <h1 className="text-4xl md:text-5xl font-sans font-bold text-white uppercase">
+          Post a Bounty
         </h1>
-        <p className="text-gray-400">
-          Describe what you need. AI agents will bid and execute.
-        </p>
       </div>
 
-      <div className="grid md:grid-cols-5 gap-8">
+      <div className="grid md:grid-cols-5 gap-12">
         
         {/* Left Col: Demo Quick-fills */}
-        <div className="md:col-span-2 space-y-4 animate-slideUp">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            Quick-fill Demos
-          </h3>
+        <div className="md:col-span-2 space-y-4 animate-slideUpMono">
+          <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-4 prompt-prefix">
+            Templates
+          </div>
           {DEMO_TASKS.map((demo, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setForm(demo.form)}
-              className="w-full text-left glass p-4 rounded-xl hover-lift group border border-white/5 hover:border-indigo-500/50 transition-all duration-300"
+              className="w-full text-left terminal-panel terminal-panel-hover p-5 transition-all duration-300"
             >
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-xl group-hover:scale-110 transition-transform">{demo.icon}</span>
-                <span className="font-semibold text-gray-200 group-hover:text-white">{demo.title}</span>
+              <div className="flex items-center gap-3 mb-2 text-white">
+                <span className="text-xl">{demo.icon}</span>
+                <span className="font-sans font-bold text-sm tracking-wide uppercase">{demo.title}</span>
               </div>
-              <p className="text-xs text-gray-500 line-clamp-1">{demo.form.title}</p>
+              <p className="text-[10px] text-gray-500 font-mono tracking-widest line-clamp-1">
+                {demo.form.title}
+              </p>
             </button>
           ))}
           
-          <div className="mt-8 glass-strong p-4 rounded-xl border border-indigo-500/20">
-            <div className="flex items-start gap-3">
-              <span className="text-indigo-400 mt-0.5">ℹ️</span>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                When you post a task, it's registered with the <strong className="text-indigo-300">Masumi Protocol</strong> (MIP-003) and awaits agent bids. ADA is locked in <strong className="text-indigo-300">Aiken Escrow</strong> upon execution.
-              </p>
+          <div className="mt-8 terminal-panel p-5 border-[#1F1F28]">
+            <div className="text-xs text-gray-400 font-mono leading-relaxed">
+              <span className="text-[#A855F7]">></span> Tasks are broadcast via Masumi MIP-003.<br/>
+              <span className="text-[#A855F7]">></span> Bids require Midnight ZK proofs.<br/>
+              <span className="text-[#A855F7]">></span> ADA locks in Aiken Escrow upon execution.
             </div>
           </div>
         </div>
 
         {/* Right Col: Form */}
         <div className="md:col-span-3">
-          <form onSubmit={submit} className="glass-strong p-8 rounded-2xl animate-slideUp delay-200 shadow-2xl relative overflow-hidden">
+          <form onSubmit={submit} className="terminal-panel p-8 md:p-10 animate-slideUpMono delay-100">
             
-            {/* Ambient glow inside form */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div className="space-y-6 relative z-10">
+            <div className="space-y-8">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Task Title</label>
+                <label className="block text-[10px] font-bold tracking-widest uppercase text-[#A855F7] mb-2 prompt-prefix">
+                  task.title
+                </label>
                 <input
-                  className="input-glow w-full"
+                  className="terminal-input"
                   placeholder="e.g. Fix 500 error on checkout API"
                   value={form.title} 
                   onChange={(e) => setForm({ ...form, title: e.target.value })} 
@@ -101,9 +101,11 @@ export default function PostTask() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Detailed Description</label>
+                <label className="block text-[10px] font-bold tracking-widest uppercase text-[#A855F7] mb-2 prompt-prefix">
+                  task.description
+                </label>
                 <textarea
-                  className="input-glow w-full h-32 resize-none"
+                  className="terminal-input h-32 resize-none leading-relaxed"
                   placeholder="Describe the problem, share logs, or provide data..."
                   value={form.description} 
                   onChange={(e) => setForm({ ...form, description: e.target.value })} 
@@ -112,49 +114,45 @@ export default function PostTask() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Bounty (ADA)</label>
-                <div className="flex items-center gap-3">
+                <label className="block text-[10px] font-bold tracking-widest uppercase text-[#A855F7] mb-2 prompt-prefix">
+                  bounty.ada
+                </label>
+                <div className="flex items-center gap-4">
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">₳</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold">₳</span>
                     <input
                       type="number" min={1} step={0.5}
-                      className="input-glow w-32 pl-8 font-mono text-lg"
+                      className="terminal-input w-32 pl-10 text-white"
                       value={form.reward_ada} 
                       onChange={(e) => setForm({ ...form, reward_ada: Number(e.target.value) })} 
                     />
                   </div>
-                  <span className="text-gray-500 text-sm font-mono bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+                  <span className="text-gray-500 text-[10px] uppercase tracking-widest">
                     {(form.reward_ada * 1_000_000).toLocaleString()} lovelace
                   </span>
                 </div>
               </div>
               
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
-                  <span>⚠️</span> {error}
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono px-4 py-3 rounded-[2px] flex items-center gap-2">
+                  <span className="font-bold">ERROR:</span> {error}
                 </div>
               )}
               
-              <div className="pt-4 flex items-center gap-4">
+              <div className="pt-8 border-t border-[#1F1F28] flex items-center gap-4">
                 <button
                   type="submit" disabled={loading}
-                  className="btn-primary flex-1 flex justify-center items-center gap-2"
+                  className="btn-terminal-primary flex-1 py-4"
                 >
                   {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>Registering task...</span>
-                    </>
+                    "EXECUTING..."
                   ) : (
-                    <>
-                      <span>✨</span>
-                      <span>Post Task to Marketplace</span>
-                    </>
+                    "POST BOUNTY →"
                   )}
                 </button>
                 
-                <Link href="/" className="px-6 py-3.5 text-gray-400 hover:text-white font-medium transition-colors">
-                  Cancel
+                <Link href="/market" className="btn-terminal-outline px-6 py-4">
+                  [CANCEL]
                 </Link>
               </div>
             </div>
