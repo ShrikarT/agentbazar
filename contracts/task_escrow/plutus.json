@@ -1,0 +1,111 @@
+{
+  "preamble": {
+    "title": "agentbazaar/task_escrow",
+    "version": "0.1.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.23+8949565"
+    }
+  },
+  "validators": [
+    {
+      "title": "escrow.task_escrow.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/escrow~1Datum"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/escrow~1Redeemer"
+        }
+      },
+      "parameters": [
+        {
+          "title": "operator",
+          "schema": {
+            "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+          }
+        }
+      ],
+      "compiledCode": "59029e010100229800aba2aba1aba0aab9faab9eaab9dab9a9bae0024888888896600264653001300900198049805000cdc3a400530090024888966002600460126ea800e26466453001159800980098061baa0028cc004c040c034dd500148c044c04800646022602460246024602460246024602460240032232330010010032259800800c528456600266e3cdd7180a000801c528c4cc008008c05400500f20244888966002600a60206ea802e2b3001330013758600460226ea802003a264664464660020026eb0c010c054dd5006112cc00400629422b30013232598009806180b9baa0018acc004cdc79bae301b3018375400200d13371200a64b300130113018375400314800226eb4c070c064dd5000a02e32598009808980c1baa0018a60103d87a8000899198008009bab301d301a375400444b30010018a6103d87a8000899192cc004cdc8a45000018acc004cdc7a44100001899ba548000cc07cc0740092f5c114c0103d87a8000406d1330040043021003406c6eb8c06c004c07800501c202e32330010013756601660326ea800c896600200314c103d87a8000899192cc004cdc8a45000018acc004cdc7a44100001899ba548000cc078c0700092f5c114c0103d87a80004069133004004302000340686eb8c068004c07400501b4528202c8a5040586034602e6ea8c068c05cdd5000980c800c528c4cc008008c068005014202e375c600260246ea8014dd6980a980b180b180b18091baa00523015301630160018a50403d1330013758600460226ea8020dd7180198089baa004403c8b201698061baa0079808001a444b300130040028acc004c040dd5005400e2c808a2b300130080028acc004c040dd5005400e2c808a2c807100e0c038c03c004dc3a400060146ea800e2c8040601200260086ea802629344d9590021",
+      "hash": "43d28402cbf1519fd3928339fe2d1b3f5f374cd7e120637129c607b9"
+    },
+    {
+      "title": "escrow.task_escrow.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "operator",
+          "schema": {
+            "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+          }
+        }
+      ],
+      "compiledCode": "59029e010100229800aba2aba1aba0aab9faab9eaab9dab9a9bae0024888888896600264653001300900198049805000cdc3a400530090024888966002600460126ea800e26466453001159800980098061baa0028cc004c040c034dd500148c044c04800646022602460246024602460246024602460240032232330010010032259800800c528456600266e3cdd7180a000801c528c4cc008008c05400500f20244888966002600a60206ea802e2b3001330013758600460226ea802003a264664464660020026eb0c010c054dd5006112cc00400629422b30013232598009806180b9baa0018acc004cdc79bae301b3018375400200d13371200a64b300130113018375400314800226eb4c070c064dd5000a02e32598009808980c1baa0018a60103d87a8000899198008009bab301d301a375400444b30010018a6103d87a8000899192cc004cdc8a45000018acc004cdc7a44100001899ba548000cc07cc0740092f5c114c0103d87a8000406d1330040043021003406c6eb8c06c004c07800501c202e32330010013756601660326ea800c896600200314c103d87a8000899192cc004cdc8a45000018acc004cdc7a44100001899ba548000cc078c0700092f5c114c0103d87a80004069133004004302000340686eb8c068004c07400501b4528202c8a5040586034602e6ea8c068c05cdd5000980c800c528c4cc008008c068005014202e375c600260246ea8014dd6980a980b180b180b18091baa00523015301630160018a50403d1330013758600460226ea8020dd7180198089baa004403c8b201698061baa0079808001a444b300130040028acc004c040dd5005400e2c808a2b300130080028acc004c040dd5005400e2c808a2c807100e0c038c03c004dc3a400060146ea800e2c8040601200260086ea802629344d9590021",
+      "hash": "43d28402cbf1519fd3928339fe2d1b3f5f374cd7e120637129c607b9"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Int": {
+      "dataType": "integer"
+    },
+    "aiken/crypto/VerificationKeyHash": {
+      "title": "VerificationKeyHash",
+      "dataType": "bytes"
+    },
+    "escrow/Datum": {
+      "title": "Datum",
+      "anyOf": [
+        {
+          "title": "Datum",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "task_id",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "poster",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            },
+            {
+              "title": "agent",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            },
+            {
+              "title": "amount",
+              "$ref": "#/definitions/Int"
+            }
+          ]
+        }
+      ]
+    },
+    "escrow/Redeemer": {
+      "title": "Redeemer",
+      "anyOf": [
+        {
+          "title": "CompleteTask",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "RefundPoster",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        }
+      ]
+    }
+  }
+}

@@ -72,7 +72,7 @@ async def execute_task(task_id: str):
                 "task_id": task_id,
                 "poster_pkh": os.getenv("OPERATOR_VKH", ""),
                 "agent_pkh": os.getenv("OPERATOR_VKH", ""),
-                "amount_lovelace": 2_000_000,
+                "amount_lovelace": t["reward_lovelace"],
             })
             data = resp.json()
             if data.get("success"):
@@ -80,6 +80,7 @@ async def execute_task(task_id: str):
                 logger.info(f"Escrow LOCK succeeded: {data['tx_hash']}")
             else:
                 logger.warning(f"Escrow LOCK returned error: {data.get('error')}")
+                t["status"] = TaskStatus.open  # Revert status so user can try again
                 raise HTTPException(400, f"Blockchain error (Lock): {data.get('error')}")
     except HTTPException:
         raise
@@ -111,7 +112,7 @@ async def complete_task(task_id: str):
                 "task_id": task_id,
                 "poster_pkh": os.getenv("OPERATOR_VKH", ""),
                 "agent_pkh": os.getenv("OPERATOR_VKH", ""),
-                "amount_lovelace": 2_000_000,
+                "amount_lovelace": t["reward_lovelace"],
             })
             data = resp.json()
             if data.get("success"):
@@ -144,7 +145,7 @@ async def refund_task(task_id: str):
                 "task_id": task_id,
                 "poster_pkh": os.getenv("OPERATOR_VKH", ""),
                 "agent_pkh": os.getenv("OPERATOR_VKH", ""),
-                "amount_lovelace": 2_000_000,
+                "amount_lovelace": t["reward_lovelace"],
             })
             data = resp.json()
             if data.get("success"):

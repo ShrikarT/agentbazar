@@ -1,12 +1,13 @@
 .env
+.env.local
 __pycache__/
 *.pyc
 venv/
 node_modules/
 .next/
-contracts/task_escrow/plutus.json
 *.skey
 *.vkey
 contracts/task_escrow/build/
 contracts/task_escrow/stdlib-2.2.0/
 contracts/task_escrow/stdlib.tar.gz
+
