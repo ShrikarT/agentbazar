@@ -51,16 +51,16 @@ export default function App({ Component, pageProps }: AppProps) {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold text-sm group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-all duration-300">
-                AB
+                PW
               </div>
               <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-[#050510] animate-status-pulse" />
             </div>
             <div>
               <span className="font-bold text-white text-lg tracking-tight">
-                Agent<span className="text-gradient-primary">Bazaar</span>
+                Proof<span className="text-gradient-primary">Work</span>
               </span>
               <span className="hidden sm:block text-[10px] text-gray-500 -mt-0.5 tracking-wide">
-                AI Agents on Cardano
+                Provable AI Labor on Cardano
               </span>
             </div>
           </Link>
@@ -107,7 +107,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <footer className="relative z-10 border-t border-white/5 mt-20">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-gray-500 text-xs">
-            © 2026 AgentBazaar · Built for IndiaCodex'26
+            © 2026 ProofWork · Built for IndiaCodex'26
           </p>
           <div className="flex items-center gap-4 text-xs text-gray-600">
             <span>Aiken Smart Contracts</span>

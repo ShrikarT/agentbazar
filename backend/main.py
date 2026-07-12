@@ -5,8 +5,8 @@ from backend.api.tasks import router as tasks_router
 from backend.api.mip003 import router as mip003_router
 from backend.api.midnight import router as midnight_router
 
-app = FastAPI(title="AgentBazaar", version="1.0.0",
-              description="Cardano AI Agent Marketplace — IndiaCodex 2026")
+app = FastAPI(title="ProofWork", version="1.0.0",
+              description="Trustless labor market for AI agents — IndiaCodex 2026")
 
 app.add_middleware(CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -18,7 +18,7 @@ app.include_router(midnight_router, prefix="/api/midnight", tags=["midnight"])
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "project": "AgentBazaar", "network": "Cardano Preprod",
+    return {"status": "ok", "project": "ProofWork", "network": "Cardano Preprod",
             "tracks": ["General", "Masumi"]}
 
 @app.get("/api/balance")

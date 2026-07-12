@@ -1,14 +1,14 @@
-# AgentBazaar
+# ProofWork
 
-**The First Trustless AI Agent Marketplace on Cardano**
+**The trustless labor market for AI agents — where every claim is a proof.**
 
-AgentBazaar is a decentralized marketplace built for the **IndiaCodex'26 Hackathon**. It allows humans to post tasks/bounties and specialized AI agents to bid and execute them. It features a fully integrated Web3 infrastructure to ensure that neither the buyer nor the agent can cheat the system.
+ProofWork is a decentralized marketplace built for the **IndiaCodex'26 Hackathon**. We solve the hardest problem in the agent economy: trust. Instead of asking you to trust a database, we ask you to verify a blockchain.
 
-## 🚀 Key Features
+## 🚀 The Trust Stack
 
-*   **Trustless Cardano Escrow:** Built with an **Aiken** smart contract (`task_escrow`). ADA is locked on the Preprod network before an agent begins work. The funds are only released when the buyer approves the work, or refunded if rejected.
-*   **Masumi Protocol Integration (MIP-003):** Agents are registered and interact according to the Masumi specification, ensuring standardized intent detection and bidding.
-*   **Midnight ZK Reputation (Roadmap):** Employs Zero-Knowledge proofs using Midnight's **Compact** language to allow agents to mathematically prove their success rate (≥ 80%) without leaking their entire task history to the public.
+*   **PROOF OF SETTLEMENT (Aiken):** Built with an **Aiken** smart contract (`task_escrow`). ADA is locked on the Preprod network before an agent begins work. The funds are only released when the buyer approves the work, or refunded if rejected.
+*   **PROOF OF IDENTITY (Masumi):** Agents are registered and interact according to the Masumi MIP-003 specification, ensuring standardized intent detection and bidding.
+*   **PROOF OF REPUTATION (Midnight):** Employs Zero-Knowledge proofs using Midnight's **Compact** language to allow agents to mathematically prove their success rate (≥ 80%) without leaking their entire task history to the public.
 *   **Live Web3 UI:** A stunning Glassmorphism Next.js frontend with live treasury balances, execution timelines, and direct block explorer links.
 *   **Groq + Tavily Brains:** The agents aren't mocked! They use Llama3 via Groq for high-speed inference and Tavily for real-time web search to solve bounties dynamically.
 
@@ -60,7 +60,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Visit `http://localhost:3000` to interact with AgentBazaar.
+Visit `http://localhost:3000` to interact with ProofWork.
 
 ## 🔗 Smart Contracts
 *   **Aiken Escrow:** Located in `contracts/task_escrow`. To build: `aiken build`.

@@ -42,11 +42,11 @@ export default function TaskFeed() {
           Live on Cardano Preprod
         </div>
         <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-6">
-          The <span className="text-gradient-primary">Autonomous</span><br />
-          Agent Marketplace
+          The <span className="text-gradient-primary">Trustless</span><br />
+          Labor Market for AI
         </h1>
         <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Post tasks with ADA bounties. Specialized AI agents bid, execute, and get paid via trustless Aiken smart contracts.
+          Post a bounty. Agents compete. Every step is proven on-chain.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/post" className="btn-primary flex items-center gap-2 text-lg px-8 py-4">
@@ -188,7 +188,7 @@ export default function TaskFeed() {
                 🔮
               </div>
               <div>
-                <h3 className="font-bold text-white">Midnight ZK Track</h3>
+                <h3 className="font-bold text-white">Proof of Reputation — Midnight ZK</h3>
                 <p className="text-xs text-gray-400">Roadmap Feature</p>
               </div>
             </div>
