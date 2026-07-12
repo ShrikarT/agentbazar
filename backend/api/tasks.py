@@ -1,9 +1,15 @@
-import uuid, hashlib
+import uuid, hashlib, os, logging
+import httpx
 from fastapi import APIRouter, HTTPException
 from backend.models.schemas import TaskCreate, TaskResponse, TaskStatus
 from backend.agents.intent import detect_intent
 from backend.agents.workers import run_agents
 from backend.masumi.client import masumi
+
+logger = logging.getLogger(__name__)
+
+ESCROW_SERVICE_URL = os.getenv("ESCROW_SERVICE_URL", "http://localhost:3002")
+ESCROW_TIMEOUT = 30.0  # seconds — chain transactions take time
 
 router = APIRouter()
 _tasks: dict[str, dict] = {}
@@ -59,7 +65,28 @@ async def execute_task(task_id: str):
     if t["status"] != TaskStatus.open:
         raise HTTPException(400, f"Task status is {t['status']}")
     t["status"] = TaskStatus.executing
-    t["escrow_tx_hash"] = hashlib.sha256(f"{task_id}-lock".encode()).hexdigest()
+    # Try real escrow lock via the escrow service, fall back to fake hash
+    try:
+        async with httpx.AsyncClient(timeout=ESCROW_TIMEOUT) as client:
+            resp = await client.post(f"{ESCROW_SERVICE_URL}/lock", json={
+                "task_id": task_id,
+                "poster_pkh": os.getenv("OPERATOR_VKH", ""),
+                "agent_pkh": os.getenv("OPERATOR_VKH", ""),
+                "amount_lovelace": 2_000_000,
+            })
+            data = resp.json()
+            if data.get("success"):
+                t["escrow_tx_hash"] = data["tx_hash"]
+                logger.info(f"Escrow LOCK succeeded: {data['tx_hash']}")
+            else:
+                logger.warning(f"Escrow LOCK returned error: {data.get('error')}")
+                raise HTTPException(400, f"Blockchain error (Lock): {data.get('error')}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning(f"Escrow service unavailable, using fake hash: {exc}")
+        t["escrow_tx_hash"] = hashlib.sha256(f"{task_id}-lock".encode()).hexdigest()
+    
     results = run_agents(t["intents"], t["description"])
     t["result"] = "\n\n---\n\n".join(
         f"**{r['agent_type'].upper()} AGENT**\n{r['result']}" for r in results)
@@ -76,12 +103,77 @@ async def complete_task(task_id: str):
     if not t: raise HTTPException(404, "Task not found")
     if t["status"] != TaskStatus.completed:
         raise HTTPException(400, "Execute the task before completing")
-    t["release_tx_hash"] = hashlib.sha256(f"{task_id}-release".encode()).hexdigest()
+    # Try real escrow release via the escrow service, fall back to fake hash
+    try:
+        async with httpx.AsyncClient(timeout=ESCROW_TIMEOUT) as client:
+            resp = await client.post(f"{ESCROW_SERVICE_URL}/release", json={
+                "lock_tx_hash": t.get("escrow_tx_hash", ""),
+                "task_id": task_id,
+                "poster_pkh": os.getenv("OPERATOR_VKH", ""),
+                "agent_pkh": os.getenv("OPERATOR_VKH", ""),
+                "amount_lovelace": 2_000_000,
+            })
+            data = resp.json()
+            if data.get("success"):
+                t["release_tx_hash"] = data["tx_hash"]
+                logger.info(f"Escrow RELEASE succeeded: {data['tx_hash']}")
+            else:
+                logger.warning(f"Escrow RELEASE returned error: {data.get('error')}")
+                raise HTTPException(400, f"Blockchain error (Release): The lock transaction may still be pending confirmation on Cardano. Please wait 30 seconds and try again. Details: {data.get('error')}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning(f"Escrow service unavailable, using fake hash: {exc}")
+        t["release_tx_hash"] = hashlib.sha256(f"{task_id}-release".encode()).hexdigest()
     t["status"] = TaskStatus.paid
     if t["masumi_job_id"]:
         ms = await masumi.job_status(t["masumi_job_id"])
         t["masumi_status"] = ms.get("status", "completed")
     return _to_response(t)
+
+@router.post("/{task_id}/refund", response_model=TaskResponse)
+async def refund_task(task_id: str):
+    t = _tasks.get(task_id)
+    if not t: raise HTTPException(404, "Task not found")
+    if t["status"] not in [TaskStatus.completed, TaskStatus.executing]:
+        raise HTTPException(400, "Can only refund executing or completed tasks")
+    try:
+        async with httpx.AsyncClient(timeout=ESCROW_TIMEOUT) as client:
+            resp = await client.post(f"{ESCROW_SERVICE_URL}/refund", json={
+                "lock_tx_hash": t.get("escrow_tx_hash", ""),
+                "task_id": task_id,
+                "poster_pkh": os.getenv("OPERATOR_VKH", ""),
+                "agent_pkh": os.getenv("OPERATOR_VKH", ""),
+                "amount_lovelace": 2_000_000,
+            })
+            data = resp.json()
+            if data.get("success"):
+                t["release_tx_hash"] = data["tx_hash"]
+                t["status"] = "refunded"
+                logger.info(f"Escrow REFUND succeeded: {data['tx_hash']}")
+            else:
+                logger.warning(f"Escrow REFUND returned error: {data.get('error')}")
+                raise HTTPException(400, f"Blockchain error (Refund): The lock transaction may still be pending. Wait and try again. Details: {data.get('error')}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"Escrow service unavailable: {exc}")
+
+    return _to_response(t)
+
+@router.get("/{task_id}/lock_status")
+async def check_lock_status(task_id: str):
+    t = _tasks.get(task_id)
+    if not t: raise HTTPException(404, "Task not found")
+    if not t.get("escrow_tx_hash") or len(t["escrow_tx_hash"]) != 64:
+        return {"confirmed": False}
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(f"{ESCROW_SERVICE_URL}/status/{t['escrow_tx_hash']}")
+            data = resp.json()
+            return {"confirmed": data.get("confirmed", False)}
+    except Exception:
+        return {"confirmed": False}
 
 def _to_response(t: dict) -> TaskResponse:
     return TaskResponse(

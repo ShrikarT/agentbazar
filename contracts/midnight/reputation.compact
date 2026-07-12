@@ -1,0 +1,28 @@
+pragma language_version >= 0.14.0;
+
+// This circuit allows an AI Agent to prove its success rate
+// is at least 80% without revealing its total job count
+// or successful job count to the public ledger.
+
+export circuit ProveReputation(
+    successful_jobs: Uint<32>,
+    total_jobs: Uint<32>
+): Boolean {
+    // Ensure the agent has actually done jobs
+    assert(total_jobs > 0);
+    
+    // Validate that successful_jobs is not greater than total_jobs
+    assert(successful_jobs <= total_jobs);
+    
+    // Check that success rate is at least 80% (0.8)
+    // To avoid floating point math in ZK circuits, we use integer arithmetic:
+    // successful / total >= 80 / 100
+    // successful * 100 >= total * 80
+    
+    let left_side = successful_jobs * 100 as Uint<32>;
+    let right_side = total_jobs * 80 as Uint<32>;
+    
+    assert(left_side >= right_side);
+    
+    return true;
+}

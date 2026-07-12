@@ -5,11 +5,12 @@ KEYWORDS = {
     "technical": ("error", "500", "api", "bug", "integration", "endpoint", "crash", "timeout", "broken", "fix"),
     "billing":   ("refund", "charge", "invoice", "payment", "subscription", "billing", "cancel", "money"),
     "faq":       ("how", "what", "where", "help", "question", "explain", "difference", "feature"),
+    "data":      ("data", "analyze", "csv", "spreadsheet", "dataset", "pandas", "chart"),
 }
 
 SYSTEM = """You are an intent classifier for a task marketplace.
 Given a task description, return a comma-separated list of agent types needed.
-Valid types: technical, billing, faq
+Valid types: technical, billing, faq, data
 Return ONLY the comma-separated types. No explanation. No punctuation besides commas.
 Examples:
 - "my payment failed" -> billing
@@ -30,7 +31,7 @@ async def detect_intent(text: str) -> list[str]:
             timeout=3.0,
         )
         intents = [i.strip().lower() for i in result.split(",")]
-        valid = {"technical", "billing", "faq"}
+        valid = {"technical", "billing", "faq", "data"}
         filtered = [i for i in intents if i in valid]
         return filtered if filtered else keyword_intent(text)
     except Exception:

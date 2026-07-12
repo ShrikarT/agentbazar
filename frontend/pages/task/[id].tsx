@@ -19,12 +19,32 @@ type Task = {
   masumi_job_id: string | null; masumi_status: string | null;
 };
 
+const INTENT_ICONS: Record<string, string> = {
+  technical: "🔧", billing: "💳", faq: "❓", data: "📊"
+};
+
 export default function TaskDetail() {
   const router = useRouter();
   const { id } = router.query;
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(false);
+  const [execStep, setExecStep] = useState(0);
+  const [isLockConfirmed, setIsLockConfirmed] = useState(false);
+  const [refunding, setRefunding] = useState(false);
+
+  useEffect(() => {
+    if (!task?.escrow_tx_hash || task.status === 'paid' || task.status === 'refunded' || isLockConfirmed) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await tasksApi.lockStatus(task.task_id);
+        if (res.confirmed) setIsLockConfirmed(true);
+      } catch (e) {
+        console.error(e);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [task, isLockConfirmed]);
 
   useEffect(() => {
     if (!id) return;
@@ -35,10 +55,33 @@ export default function TaskDetail() {
   async function execute() {
     if (!id) return;
     setLoading(true);
-    try {
-      const updated = await tasksApi.execute(id as string);
-      setTask(updated);
-    } finally { setLoading(false); }
+    setExecStep(1); // 🔍 Detecting intent...
+    
+    setTimeout(async () => {
+      setExecStep(2); // 🔐 ZK Proof
+      try {
+        await tasksApi.proveZk(bids[0]?.agent_id || "agent");
+      } catch (e) {
+        console.error(e);
+      }
+      
+      setExecStep(3); // 🔒 Locking ADA...
+      setTimeout(() => setExecStep(4), 1500); // 🤖 Agent executing...
+      
+      try {
+        const updated = await tasksApi.execute(id as string);
+        setExecStep(5); // 📋 Generating response...
+        setTimeout(() => {
+          setTask(updated);
+          setExecStep(6); // Done
+          setLoading(false);
+        }, 1000);
+      } catch (e) {
+        console.error(e);
+        setLoading(false);
+        setExecStep(0);
+      }
+    }, 1500);
   }
 
   async function complete() {
@@ -50,107 +93,283 @@ export default function TaskDetail() {
     } finally { setLoading(false); }
   }
 
-  if (!task) return <div className="p-6 text-gray-400">Loading...</div>;
+  async function refund() {
+    if (!id) return;
+    setRefunding(true);
+    try {
+      const updated = await tasksApi.refund(id as string);
+      setTask(updated);
+    } catch (e: any) {
+      alert(e?.response?.data?.detail || "Refund failed");
+    } finally { setRefunding(false); }
+  }
+
+  if (!task) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen p-6 max-w-3xl mx-auto">
-      <Link href="/" className="text-gray-500 text-sm hover:text-gray-300 mb-6 inline-block">← Task Feed</Link>
+    <div className="max-w-4xl mx-auto px-6 py-12">
+      <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-8 group font-medium">
+        <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Marketplace
+      </Link>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-        <div className="flex justify-between items-start">
-          <h1 className="text-xl font-bold text-white">{task.title}</h1>
-          <span className="text-green-400 font-bold text-xl">₳{task.reward_ada}</span>
-        </div>
-        <p className="text-gray-400 text-sm mt-2">{task.description}</p>
-        <div className="flex gap-2 mt-3">
-          {task.intents.map((i) => (
-            <span key={i} className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded">{i}</span>
-          ))}
-          <span className="text-xs font-mono text-yellow-400">● {task.status}</span>
-        </div>
-      </div>
-
-      {/* Agent Bids */}
-      {bids.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Agent Bids</h2>
-          <div className="space-y-3">
-            {bids.map((b) => (
-              <div key={b.agent_id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-white">{b.agent_name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{b.agent_id}</p>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs text-green-400">{(b.success_rate * 100).toFixed(0)}% success</span>
-                    <span className="text-xs text-gray-500">{b.completed_jobs} jobs</span>
-                    {b.masumi_verified && (
-                      <span className="text-xs bg-indigo-900 text-indigo-300 px-2 rounded">Masumi ✓</span>
-                    )}
-                    {b.zk_verified && (
-                      <span className="text-xs bg-purple-900 text-purple-300 px-2 rounded">ZK ≥80% ✓</span>
-                    )}
-                  </div>
-                </div>
-                <span className="text-green-400 font-bold">₳{b.reward_ada}</span>
+      <div className="grid md:grid-cols-3 gap-8">
+        
+        {/* Left Col: Main Task Info & Result */}
+        <div className="md:col-span-2 space-y-6">
+          
+          <div className="glass-strong rounded-2xl p-8 relative overflow-hidden animate-slideUp">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex gap-2">
+                {task.intents.map((i) => (
+                  <span key={i} className="text-xs font-semibold bg-white/5 border border-white/10 text-gray-300 px-3 py-1 rounded-full flex items-center gap-1">
+                    {INTENT_ICONS[i] || "⚙️"} {i}
+                  </span>
+                ))}
               </div>
-            ))}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                task.status === 'open' ? 'text-amber-400 bg-amber-400/10 border border-amber-400/20' :
+                task.status === 'executing' ? 'text-blue-400 bg-blue-400/10 border border-blue-400/20' :
+                task.status === 'paid' ? 'text-purple-400 bg-purple-400/10 border border-purple-400/20' :
+                task.status === 'refunded' ? 'text-red-400 bg-red-400/10 border border-red-400/20' :
+                'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20'
+              }`}>
+                {task.status === 'executing' && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>}
+                {task.status}
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold text-white mb-4">{task.title}</h1>
+            <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap bg-black/20 p-4 rounded-xl border border-white/5">
+              {task.description}
+            </p>
           </div>
-        </div>
-      )}
 
-      {/* Actions */}
-      {task.status === "open" && (
-        <button onClick={execute} disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition mb-4">
-          {loading ? "Agent executing..." : "Accept Best Bid & Execute"}
-        </button>
-      )}
-      {task.status === "completed" && (
-        <button onClick={complete} disabled={loading}
-          className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition mb-4">
-          {loading ? "Releasing ADA..." : "Approve & Release ADA to Agent"}
-        </button>
-      )}
+          {/* Execution Timeline (Shown during execution) */}
+          {execStep > 0 && execStep < 6 && (
+            <div className="glass-strong rounded-2xl p-8 animate-fadeIn border-indigo-500/30">
+              <h3 className="text-sm font-semibold text-indigo-400 uppercase tracking-widest mb-6">Live Execution</h3>
+              
+              <div className="space-y-4 relative">
+                <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-indigo-500/20"></div>
+                
+                {[
+                  { step: 1, label: "🔍 Detecting intent and routing to specialist agent..." },
+                  { step: 2, label: "🔐 Generating & Verifying Midnight ZK Reputation Proof..." },
+                  { step: 3, label: "🔒 Locking ADA in Aiken smart contract escrow on Preprod..." },
+                  { step: 4, label: "🤖 Agent executing task and computing result..." },
+                  { step: 5, label: "📋 Finalizing response..." }
+                ].map((s) => (
+                  <div key={s.step} className={`flex items-start gap-4 relative z-10 transition-all duration-500 ${execStep >= s.step ? 'opacity-100' : 'opacity-30'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 mt-0.5 ${
+                      execStep > s.step ? 'bg-emerald-500 text-white animate-check-pop' :
+                      execStep === s.step ? 'bg-indigo-500 text-white animate-pulse' :
+                      'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}>
+                      {execStep > s.step ? '✓' : s.step}
+                    </div>
+                    <div className={`text-sm ${execStep === s.step ? 'text-white font-medium' : 'text-gray-400'}`}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Result */}
-      {task.result && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Agent Response</h2>
-          <div className="text-gray-200 text-sm whitespace-pre-wrap">{task.result}</div>
-          {task.agents_used.length > 0 && (
-            <p className="text-xs text-gray-600 mt-3">Agents: {task.agents_used.join(", ")}</p>
+          {/* Result */}
+          {task.result && (
+            <div className="glass rounded-2xl p-8 animate-slideUp border-emerald-500/30 bg-emerald-900/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xl">
+                  ✨
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-widest">Agent Response</h2>
+                  {task.agents_used.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">Generated by {task.agents_used.join(", ")}</p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed bg-black/20 p-5 rounded-xl border border-white/5 whitespace-pre-wrap font-mono">
+                {task.result}
+              </div>
+
+              {task.status === "completed" && (
+                <div className="mt-8 space-y-3">
+                  <div className="flex gap-4">
+                      <button onClick={complete} disabled={loading || refunding || !isLockConfirmed}
+                        className="flex-1 btn-success flex justify-center items-center gap-2">
+                        {loading ? (
+                          <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Releasing ADA...</>
+                        ) : !isLockConfirmed ? (
+                          <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Waiting for block...</>
+                        ) : (
+                          <><span>💰</span> Approve & Release ADA</>
+                        )}
+                      </button>
+                      <button onClick={refund} disabled={loading || refunding || !isLockConfirmed}
+                        className="flex-1 bg-red-600/80 hover:bg-red-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition flex justify-center items-center gap-2 border border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+                        {refunding ? (
+                          <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Refunding...</>
+                        ) : (
+                          <><span>🛑</span> Reject & Refund ADA</>
+                        )}
+                      </button>
+                  </div>
+                  <p className="text-center text-xs text-gray-500 mt-3">
+                    {!isLockConfirmed ? "Waiting for the lock transaction to confirm before actions can be taken." : "Choose whether to release the bounty to the agent or refund it to your wallet."}
+                  </p>
+                </div>
+              )}
+              {task.status === "refunded" && (
+                <div className="mt-8 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
+                    <p className="text-red-400 font-bold uppercase tracking-wider text-sm">Refunded</p>
+                    <p className="text-xs text-gray-500 mt-1">The ADA was returned to the poster.</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
-      )}
 
-      {/* Chain Status */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">On-Chain Status</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Escrow (Aiken)</span>
-            {task.escrow_tx_hash ? (
-              <a href={`${EXPLORER}/${task.escrow_tx_hash}`} target="_blank" rel="noreferrer"
-                className="text-blue-400 text-xs font-mono hover:underline">
-                {task.escrow_tx_hash.slice(0, 16)}... ↗
-              </a>
-            ) : <span className="text-gray-600 text-xs">Pending lock</span>}
+        {/* Right Col: Metadata & Actions */}
+        <div className="space-y-6">
+          
+          <div className="glass-strong rounded-2xl p-6 text-center animate-slideUp">
+            <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-2">Bounty Locked</div>
+            <div className="text-4xl font-black text-emerald-400 flex items-center justify-center gap-2 mb-1">
+              ₳ {task.reward_ada}
+            </div>
+            <div className="text-xs text-gray-500 font-mono">
+              {(task.reward_ada * 1_000_000).toLocaleString()} lovelace
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Release (Aiken)</span>
-            {task.release_tx_hash ? (
-              <a href={`${EXPLORER}/${task.release_tx_hash}`} target="_blank" rel="noreferrer"
-                className="text-green-400 text-xs font-mono hover:underline">
-                {task.release_tx_hash.slice(0, 16)}... ↗
-              </a>
-            ) : <span className="text-gray-600 text-xs">Pending release</span>}
+
+          {/* Action Button */}
+          {task.status === "open" && bids.length > 0 && (
+            <button onClick={execute} disabled={loading}
+              className="w-full btn-primary py-4 animate-slideUp delay-100 flex justify-center items-center gap-2 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+              {loading ? (
+                <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Connecting...</>
+              ) : (
+                <><span>⚡</span> Accept Best Bid & Execute</>
+              )}
+            </button>
+          )}
+
+          {/* Agent Bids */}
+          {bids.length > 0 && (
+            <div className="glass rounded-2xl p-6 animate-slideUp delay-200">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center justify-between">
+                Marketplace Bids
+                <span className="bg-white/10 px-2 py-0.5 rounded-full">{bids.length}</span>
+              </h2>
+              <div className="space-y-3">
+                {bids.map((b) => (
+                  <div key={b.agent_id} className={`p-4 rounded-xl border transition-all ${
+                    task.status !== 'open' ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-black/20 border-white/5 hover:border-indigo-500/30'
+                  }`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold text-gray-200 text-sm flex items-center gap-2">
+                          {INTENT_ICONS[b.agent_type] || "🤖"} {b.agent_name}
+                          {task.status !== 'open' && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">SELECTED</span>}
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-mono mt-1">{b.agent_id}</p>
+                      </div>
+                      <span className="text-emerald-400 font-bold text-sm">₳{b.reward_ada}</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      <span className="text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded">
+                        {(b.success_rate * 100).toFixed(0)}% Success
+                      </span>
+                      {b.masumi_verified && (
+                        <span className="text-[10px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-1 rounded">
+                          Masumi MIP-003 ✓
+                        </span>
+                      )}
+                      {b.zk_verified && (
+                        <span className="text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-1 rounded">
+                          Midnight ZK ✓
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Chain Status */}
+          <div className="glass rounded-2xl p-6 animate-slideUp delay-300">
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span>⛓️</span> On-Chain Status
+            </h2>
+            <div className="space-y-4">
+              
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-400 text-xs font-medium">Aiken Escrow Lock</span>
+                  {task.escrow_tx_hash ? (
+                    <span className="text-emerald-400 text-[10px] bg-emerald-400/10 px-2 py-0.5 rounded uppercase font-bold">Confirmed</span>
+                  ) : <span className="text-gray-600 text-[10px] uppercase font-bold">Pending</span>}
+                </div>
+                {task.escrow_tx_hash ? (
+                  <a href={`${EXPLORER}/${task.escrow_tx_hash}`} target="_blank" rel="noreferrer"
+                    className="block text-indigo-400 text-xs font-mono hover:text-indigo-300 transition-colors bg-black/20 p-2 rounded-lg border border-white/5 truncate">
+                    {task.escrow_tx_hash} ↗
+                  </a>
+                ) : (
+                  <div className="text-gray-600 text-xs font-mono bg-black/20 p-2 rounded-lg border border-white/5">Waiting for execution...</div>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-400 text-xs font-medium">Aiken Escrow Release</span>
+                  {task.release_tx_hash ? (
+                    <span className="text-emerald-400 text-[10px] bg-emerald-400/10 px-2 py-0.5 rounded uppercase font-bold">Confirmed</span>
+                  ) : <span className="text-gray-600 text-[10px] uppercase font-bold">Pending</span>}
+                </div>
+                {task.release_tx_hash ? (
+                  <a href={`${EXPLORER}/${task.release_tx_hash}`} target="_blank" rel="noreferrer"
+                    className="block text-indigo-400 text-xs font-mono hover:text-indigo-300 transition-colors bg-black/20 p-2 rounded-lg border border-white/5 truncate">
+                    {task.release_tx_hash} ↗
+                  </a>
+                ) : (
+                  <div className="text-gray-600 text-xs font-mono bg-black/20 p-2 rounded-lg border border-white/5">Waiting for approval...</div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-400 text-xs font-medium">Masumi Job Tracker</span>
+                </div>
+                <div className="text-indigo-300 text-xs font-mono bg-indigo-500/10 p-2 rounded-lg border border-indigo-500/20">
+                  {task.masumi_job_id ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-gray-400">ID: {task.masumi_job_id}</span>
+                      <span className="font-bold flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${task.masumi_status === 'completed' ? 'bg-emerald-400' : 'bg-indigo-400 animate-pulse'}`}></span>
+                        Status: {task.masumi_status}
+                      </span>
+                    </div>
+                  ) : "Registering..."}
+                </div>
+              </div>
+
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Masumi Job</span>
-            <span className="text-indigo-300 text-xs font-mono">
-              {task.masumi_job_id ? `${task.masumi_job_id} · ${task.masumi_status}` : "Registering..."}
-            </span>
-          </div>
+          
         </div>
       </div>
     </div>

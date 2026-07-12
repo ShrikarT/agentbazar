@@ -1,8 +1,11 @@
 {
   "name": "agentbazaar-scripts",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "prove-chain": "ts-node prove_chain.ts"
+    "prove-chain": "tsx prove_chain.ts",
+    "generate-wallets": "tsx generate_wallets.ts",
+    "escrow-service": "tsx escrow_service.ts"
   },
   "dependencies": {
     "@lucid-evolution/lucid": "^0.3.8",
@@ -10,6 +13,7 @@
   },
   "devDependencies": {
     "ts-node": "^10.9.0",
+    "tsx": "^4.0.0",
     "typescript": "^5"
   }
 }

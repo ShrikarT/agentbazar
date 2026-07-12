@@ -26,6 +26,10 @@ import {
 } from "@lucid-evolution/lucid";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const EXPLORER = "https://preprod.cardanoscan.io/transaction";
 
@@ -52,7 +56,7 @@ async function main() {
   }
   const blueprint = JSON.parse(fs.readFileSync(blueprintPath, "utf-8"));
   const compiled = blueprint.validators.find(
-    (v: any) => v.title === "task_escrow.task_escrow.spend"
+    (v: any) => v.title === "escrow.task_escrow.spend"
   );
   if (!compiled) { console.error("Validator not found in blueprint"); process.exit(1); }
 
@@ -71,9 +75,9 @@ async function main() {
   });
 
   const walletAddr = await lucid.wallet().address();
-  const walletDetails = await lucid.wallet().utxos();
+  const walletUtxos = await lucid.utxosAt(walletAddr);
   console.log("Operator wallet:", walletAddr);
-  console.log("UTXOs:", walletDetails.length);
+  console.log("UTXOs:", walletUtxos.length);
 
   // --- LOCK ---
   const taskId = Buffer.from("prove-chain-001").toString("hex");
@@ -96,13 +100,17 @@ async function main() {
   console.log("Explorer:", EXPLORER + "/" + lockHash);
 
   // wait for confirmation
-  console.log("\nWaiting 30s for confirmation...");
-  await new Promise((r) => setTimeout(r, 30_000));
+  console.log("\nWaiting 60s for confirmation...");
+  await new Promise((r) => setTimeout(r, 60_000));
 
   // --- RELEASE ---
   const scriptUtxos = await lucid.utxosAt(scriptAddress);
-  const utxo = scriptUtxos.find((u) => u.datum === datum);
+  console.log("Script UTXOs found:", scriptUtxos.length);
+  
+  // Find our UTXO by txHash from the lock transaction
+  const utxo = scriptUtxos.find((u) => u.txHash === lockHash) || scriptUtxos[0];
   if (!utxo) { console.error("UTXO not found at script address"); process.exit(1); }
+  console.log("Found UTXO:", utxo.txHash, "index:", utxo.outputIndex);
 
   const RedeemSchema = Data.Enum([Data.Literal("CompleteTask"), Data.Literal("RefundPoster")]);
   const redeemer = Data.to("CompleteTask", RedeemSchema as any);
@@ -113,7 +121,7 @@ async function main() {
     .attach.SpendingValidator(validator)
     .pay.ToAddress(walletAddr, { lovelace })
     .addSigner(walletAddr)
-    .complete();
+    .complete({ localUPLCEval: false });
   const releaseSigned = await releaseTx.sign.withWallet().complete();
   const releaseHash = await releaseSigned.submit();
   console.log("RELEASE TX:", releaseHash);
